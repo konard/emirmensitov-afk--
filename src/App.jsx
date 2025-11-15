@@ -11,16 +11,11 @@ function App() {
   const [timeLeft, setTimeLeft] = useState(GAME_TIME)
   const [gameState, setGameState] = useState('start') // start, playing, ended
   const [coins, setCoins] = useState(0)
-  const [highScore, setHighScore] = useState(0)
-  const [playerX, setPlayerX] = useState(50)
-
-  // Load high score from localStorage
-  useEffect(() => {
+  const [highScore, setHighScore] = useState(() => {
     const savedHighScore = localStorage.getItem('towerGameHighScore')
-    if (savedHighScore) {
-      setHighScore(parseInt(savedHighScore, 10))
-    }
-  }, [])
+    return savedHighScore ? parseInt(savedHighScore, 10) : 0
+  })
+  const [playerX, setPlayerX] = useState(50)
 
   // Timer logic
   useEffect(() => {
@@ -37,7 +32,7 @@ function App() {
     }, 1000)
 
     return () => clearInterval(timer)
-  }, [gameState])
+  }, [gameState, endGame])
 
   // Keyboard controls
   const handleKeyPress = useCallback((e) => {
@@ -73,20 +68,23 @@ function App() {
     return () => window.removeEventListener('keydown', handleKeyPress)
   }, [handleKeyPress])
 
+  const endGame = useCallback(() => {
+    setGameState('ended')
+    setPlayerLevel(current => {
+      if (current > highScore) {
+        setHighScore(current)
+        localStorage.setItem('towerGameHighScore', current.toString())
+      }
+      return current
+    })
+  }, [highScore])
+
   const startGame = () => {
     setGameState('playing')
     setPlayerLevel(0)
     setTimeLeft(GAME_TIME)
     setCoins(0)
     setPlayerX(50)
-  }
-
-  const endGame = () => {
-    setGameState('ended')
-    if (playerLevel > highScore) {
-      setHighScore(playerLevel)
-      localStorage.setItem('towerGameHighScore', playerLevel.toString())
-    }
   }
 
   const renderTower = () => {
